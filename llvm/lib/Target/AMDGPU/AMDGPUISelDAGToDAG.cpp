@@ -607,6 +607,27 @@ void AMDGPUDAGToDAGISel::Select(SDNode *N) {
     ReplaceNode(N, buildSMovImm64(DL, Imm, N->getValueType(0)));
     return;
   }
+  case AMDGPUISD::BFI: {
+    ConstantSDNode *Mask = dyn_cast<ConstantSDNode>(N->getOperand(0));
+    if (!Mask)
+      break;
+
+    if (Mask->getZExtValue() == 0) {
+      ReplaceNode(N, N->getOperand(2).getNode());
+      return;
+    }
+
+    if (Mask->getSExtValue() == -1) {
+      ReplaceNode(N, N->getOperand(1).getNode());
+      return;
+    }
+
+    const SDValue Ops[] = {N->getOperand(0), N->getOperand(1), N->getOperand(2) };
+    SDNode *BFI = CurDAG->getMachineNode(AMDGPU::V_BFI_B32_e64, SDLoc(N), N->getValueType(0), Ops);
+    ReplaceNode(N, BFI);
+    return;
+  }
+
   case AMDGPUISD::BFE_I32:
   case AMDGPUISD::BFE_U32: {
     // There is a scalar version available, but unlike the vector version which

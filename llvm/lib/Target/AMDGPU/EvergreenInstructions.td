@@ -409,7 +409,7 @@ def : AMDGPUPat <
 >;
 
 def BFI_INT_eg : R600_3OP <0x06, "BFI_INT",
-  [(set i32:$dst, (AMDGPUbfi i32:$src0, i32:$src1, i32:$src2))],
+  [(set i32:$dst, (AMDGPUbfi_impl i32:$src0, i32:$src1, i32:$src2))],
   VecALU
 >;
 

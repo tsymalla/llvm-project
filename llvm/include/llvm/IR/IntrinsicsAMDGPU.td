@@ -1857,6 +1857,11 @@ def int_amdgcn_sbfe : DefaultAttrsIntrinsic<[llvm_anyint_ty],
     [IntrNoMem, IntrSpeculatable]
 >;
 
+def int_amdgcn_bfi : DefaultAttrsIntrinsic<[llvm_i32_ty],
+    [llvm_i32_ty, llvm_i32_ty, llvm_i32_ty],
+    [IntrNoMem, IntrSpeculatable]
+>;
+
 def int_amdgcn_lerp :
   ClangBuiltin<"__builtin_amdgcn_lerp">,
   DefaultAttrsIntrinsic<[llvm_i32_ty], [llvm_i32_ty, llvm_i32_ty, llvm_i32_ty],

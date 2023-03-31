@@ -270,7 +270,7 @@ def AMDGPUround : SDNode<"ISD::FROUND",
 
 def AMDGPUbfe_u32_impl : SDNode<"AMDGPUISD::BFE_U32", AMDGPUDTIntTernaryOp>;
 def AMDGPUbfe_i32_impl : SDNode<"AMDGPUISD::BFE_I32", AMDGPUDTIntTernaryOp>;
-def AMDGPUbfi : SDNode<"AMDGPUISD::BFI", AMDGPUDTIntTernaryOp>;
+def AMDGPUbfi_impl : SDNode<"AMDGPUISD::BFI", AMDGPUDTIntTernaryOp>;
 def AMDGPUbfm : SDNode<"AMDGPUISD::BFM", SDTIntBinOp>;
 
 def AMDGPUffbh_u32_impl : SDNode<"AMDGPUISD::FFBH_U32", SDTIntBitCountUnaryOp>;
@@ -473,6 +473,10 @@ def AMDGPUbfe_i32 : PatFrags<(ops node:$src0, node:$src1, node:$src2),
 def AMDGPUbfe_u32 : PatFrags<(ops node:$src0, node:$src1, node:$src2),
   [(int_amdgcn_ubfe node:$src0, node:$src1, node:$src2),
    (AMDGPUbfe_u32_impl node:$src0, node:$src1, node:$src2)]>;
+
+def AMDGPUbfi : PatFrags<(ops node:$src0, node:$src1, node:$src2),
+  [(int_amdgcn_bfi node:$src0, node:$src1, node:$src2),
+   (AMDGPUbfi_impl node:$src0, node:$src1, node:$src2)]>;
 
 def AMDGPUfmul_legacy : PatFrags<(ops node:$src0, node:$src1),
   [(int_amdgcn_fmul_legacy node:$src0, node:$src1),
