@@ -19,6 +19,8 @@
 #define LLVM_ANALYSIS_LINT_H
 
 #include "llvm/IR/PassManager.h"
+#include <functional>
+#include <vector>
 
 namespace llvm {
 
@@ -35,8 +37,14 @@ void lintModule(const Module &M);
 void lintFunction(const Function &F);
 
 class LintPass : public PassInfoMixin<LintPass> {
+  using LintCallbackTy = std::function<bool(Function &)>;
 public:
   PreservedAnalyses run(Function &F, FunctionAnalysisManager &AM);
+
+  void addLintCheck(LintCallbackTy);
+
+private:
+  std::vector<LintCallbackTy> AdditionalLintChecks;
 };
 
 } // namespace llvm

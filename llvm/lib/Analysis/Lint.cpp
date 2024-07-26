@@ -132,11 +132,12 @@ public:
 
   std::string Messages;
   raw_string_ostream MessagesStr;
+  std::vector<std::function<bool(Function &)>> AdditionalLintCallbacks;
 
   Lint(Module *Mod, const DataLayout *DL, AliasAnalysis *AA,
-       AssumptionCache *AC, DominatorTree *DT, TargetLibraryInfo *TLI)
+       AssumptionCache *AC, DominatorTree *DT, TargetLibraryInfo *TLI, std::vector<std::function<bool(Function &)>> AdditionalLintCallbacks)
       : Mod(Mod), DL(DL), AA(AA), AC(AC), DT(DT), TLI(TLI),
-        MessagesStr(Messages) {}
+        MessagesStr(Messages), AdditionalLintCallbacks(std::move(AdditionalLintCallbacks)) {}
 
   void WriteValues(ArrayRef<const Value *> Vs) {
     for (const Value *V : Vs) {
@@ -185,6 +186,9 @@ void Lint::visitFunction(Function &F) {
         "Unusual: Unnamed function with non-local linkage", &F);
 
   // TODO: Check for irreducible control flow.
+
+  for (auto &AdditionalCheck: AdditionalLintCallbacks)
+    AdditionalCheck(F);
 }
 
 void Lint::visitCallBase(CallBase &I) {
@@ -698,14 +702,19 @@ PreservedAnalyses LintPass::run(Function &F, FunctionAnalysisManager &AM) {
   auto *AC = &AM.getResult<AssumptionAnalysis>(F);
   auto *DT = &AM.getResult<DominatorTreeAnalysis>(F);
   auto *TLI = &AM.getResult<TargetLibraryAnalysis>(F);
-  Lint L(Mod, DL, AA, AC, DT, TLI);
+  Lint L(Mod, DL, AA, AC, DT, TLI, std::move(AdditionalLintChecks));
   L.visit(F);
+
   dbgs() << L.MessagesStr.str();
   if (LintAbortOnError && !L.MessagesStr.str().empty())
     report_fatal_error(Twine("Linter found errors, aborting. (enabled by --") +
                            LintAbortOnErrorArgName + ")",
                        false);
   return PreservedAnalyses::all();
+}
+
+void LintPass::addLintCheck(LintCallbackTy Callback) {
+  AdditionalLintChecks.push_back(std::move(Callback));
 }
 
 //===----------------------------------------------------------------------===//
