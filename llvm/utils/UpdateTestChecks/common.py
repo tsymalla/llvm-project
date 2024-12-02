@@ -595,6 +595,7 @@ SCRUB_LOOP_COMMENT_RE = re.compile(
     r"# =>This Inner Loop Header:.*|# in Loop:.*", flags=re.M
 )
 SCRUB_TAILING_COMMENT_TOKEN_RE = re.compile(r"(?<=\S)+[ \t]*#$", flags=re.M)
+SUBSTITUTION_GROUP_RE = re.compile(r"(?<=[\])]{2}(\s))\s*", flags=re.M)
 
 SEPARATOR = "."
 
@@ -1896,6 +1897,7 @@ def add_checks(
     is_filtered,
     preserve_names=False,
     original_check_lines: Mapping[str, List[str]] = {},
+    split_same_checks=False,
 ):
     # prefix_exclusions are prefixes we cannot use to print the function because it doesn't exist in run lines that use these prefixes as well.
     prefix_exclusions = set()
@@ -1975,6 +1977,7 @@ def add_checks(
                 # Captures in label lines are not supported, thus split into a -LABEL
                 # and a separate -SAME line that contains the arguments with captures.
                 args_and_sig_prefix = ""
+
                 if ginfo.get_version() >= 3 and args_and_sig.startswith("("):
                     # Ensure the "(" separating function name and arguments is in the
                     # label line. This is required in case of function names that are
@@ -1996,9 +1999,20 @@ def add_checks(
                         func_name_separator,
                     )
                 )
-                output_lines.append(
-                    "%s %s-SAME: %s" % (comment_marker, checkprefix, args_and_sig)
-                )
+                if split_same_checks:
+                    # Split args_and_sig into lists of at max. 9 entries, since this the largest supported lookahead for numerical back-references in FileCheck.
+                    MAX_GROUP_SIZE = 8
+                    split_parts = [m for m in re.split(SUBSTITUTION_GROUP_RE, args_and_sig) if m != ' ']
+
+                    for x in range(0, len(split_parts), MAX_GROUP_SIZE):
+                        arg_chunk = split_parts[x:x + MAX_GROUP_SIZE]
+                        output_lines.append(
+                            "%s %s-SAME: %s" % (comment_marker, checkprefix, ''.join(arg_chunk))
+                        )
+                else:
+                    output_lines.append(
+                        "%s %s-SAME: %s" % (comment_marker, checkprefix, args_and_sig)
+                    )
             else:
                 output_lines.append(
                     check_label_format
@@ -2144,6 +2158,7 @@ def add_ir_checks(
     global_vars_seen_dict,
     is_filtered,
     original_check_lines={},
+    split_same_checks=False,
 ):
     assert ginfo.is_ir()
     # Label format is based on IR string.
@@ -2168,6 +2183,7 @@ def add_ir_checks(
         is_filtered,
         preserve_names,
         original_check_lines=original_check_lines,
+        split_same_checks=split_same_checks,
     )
 
 

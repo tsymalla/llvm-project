@@ -91,6 +91,16 @@ def main():
         help="Reset all variable names to correspond closely to the variable names in IR. "
         "This tends to result in larger diffs.",
     )
+    parser.add_argument(
+        "--ignore-manual",
+        help="Ignore regenerating manually written tests. "
+        "Useful when invoking the script with a wildcard argument.",
+    )
+    parser.add_argument(
+        "--split-same-checks",
+        help="Split -SAME check lines. "
+        "Useful to avoid running into issues with back-referencing substitions.",
+    )
     parser.add_argument("tests", nargs="+")
     initial_args = common.parse_commandline_args(parser)
 
@@ -208,6 +218,14 @@ def main():
             "--include-generated-funcs",
             True,
         )
+
+        split_same_checks = common.find_arg_in_test(
+            ti,
+            lambda args: ti.args.split_same_checks,
+            "--split-same-checks",
+            False,
+        )
+
         generated_prefixes = []
         if include_generated_funcs:
             # Generate the appropriate checks for each function.  We need to emit
@@ -254,6 +272,7 @@ def main():
                         global_vars_seen_dict,
                         is_filtered=builder.is_filtered(),
                         original_check_lines=original_check_lines.get(func, {}),
+                        split_same_checks=split_same_checks,
                     ),
                 )
             )
