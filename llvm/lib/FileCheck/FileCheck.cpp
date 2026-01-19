@@ -2008,13 +2008,9 @@ bool FileCheck::readCheckFile(
       (ImplicitNegativeChecks.empty() || !Req.IsDefaultCheckPrefix)) {
     errs() << "error: no check strings found with prefix"
            << (PrefixesNotFound.size() > 1 ? "es " : " ");
-    bool First = true;
-    for (StringRef MissingPrefix : PrefixesNotFound) {
-      if (!First)
-        errs() << ", ";
-      errs() << "\'" << MissingPrefix << ":'";
-      First = false;
-    }
+    ListSeparator LS;
+    for (StringRef MissingPrefix : PrefixesNotFound)
+      errs() << LS << "\'" << MissingPrefix << ":'";
     errs() << '\n';
     return true;
   }
